@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
 {
@@ -23,7 +24,7 @@ public class GameManager : MonoBehaviour
     public bool segurando;
     private Vector3 offset;
 
-    private void awake()
+    private void Awake()
     {
         instance = this;
     }
@@ -32,7 +33,9 @@ public class GameManager : MonoBehaviour
     
     void Start()
     {
-        
+        SpawnarNovoJogador();
+        AtualizarContador();
+        tijolosRestantes = GameObject.FindGameObjectsWithTag("Tijolo").Length;
     }
 
     public void AtualizarContador()
@@ -44,11 +47,72 @@ public class GameManager : MonoBehaviour
     {
         GameObject playerObj = Instantiate(playerPrefab, playerSpawnPoint.position, Quaternion.identity);
         GameObject ballObj = Instantiate(ballPrefab, ballSpawnPoint.position, Quaternion.identity);
+
+        playerAtual = playerObj.GetComponent<PlayerB>();
+        ballAtual = ballObj.GetComponent<BallB>();
+
+        segurando = true;
+        offset = playerAtual.transform.position - ballAtual.transform.position;
+    }
+
+    public void SubtrairTijolo()
+    {
+        tijolosRestantes--;
+
+        if (tijolosRestantes <= 0)
+        {
+            vitoria();
+        }
+    }
+
+    public void SubtrairVida()
+    {
+        vidas--;
+        AtualizarContador();
+        Destroy(playerAtual.gameObject);
+        Destroy(ballAtual.gameObject);
+        if (vidas <= 0)
+        {
+            GameOver();
+        }
+
+        else
+        {
+            Invoke(nameof(SpawnarNovoJogador),2 );
+        }
+    }
+
+    public void vitoria()
+    {
+        msgFinal.text = "Parabéns";
+        Destroy(ballAtual.gameObject);
+        Invoke(nameof(ReiniciarCena), 2);
+    }
+
+    public void GameOver()
+    {
+        msgFinal.text = "Game Over";
+        Invoke(nameof(ReiniciarCena), 2);
         
     }
 
+    public void ReiniciarCena()
+    {
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+    }
+    
+
     void Update()
     {
-        
+        if (segurando)
+        {
+            ballAtual.transform.position = playerAtual.transform.position - offset;
+
+            if (Input.GetKeyDown(KeyCode.Space))
+            {
+                ballAtual.DispararBolinha(playerAtual.inputX);
+                segurando = false;
+            }
+        }
     }
 }
